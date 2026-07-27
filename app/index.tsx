@@ -1,67 +1,77 @@
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useState } from 'react';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { getDashboardSummary, type DashboardSummary } from '../src/database/database';
 
-const cards = [
-  { title: "Lebensmittel scannen", subtitle: "Barcode prüfen und Histamin-Risiko einschätzen", icon: "▣" },
-  { title: "Mahlzeit eintragen", subtitle: "Kalorien, Protein und Makros dokumentieren", icon: "+" },
-  { title: "Stimmung erfassen", subtitle: "Energie, Stress und Konzentration festhalten", icon: "☺" },
-  { title: "Symptome dokumentieren", subtitle: "Beschwerden, Stärke und Zeitpunkt speichern", icon: "!" }
-];
+const emptySummary: DashboardSummary = { calories: 0, protein: 0, carbohydrates: 0, fat: 0, symptomCount: 0, latestMood: null };
 
 export default function HomeScreen() {
+  const [summary, setSummary] = useState(emptySummary);
+
+  useFocusEffect(useCallback(() => {
+    setSummary(getDashboardSummary());
+  }, []));
+
+  const mood = summary.latestMood ? ['😣', '🙁', '😐', '🙂', '😄'][summary.latestMood - 1] : '–';
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.brand}>HistaTrack</Text>
-        <Text style={styles.tagline}>Verstehe, was dir wirklich guttut.</Text>
+        <Text style={styles.eyebrow}>DEIN PERSÖNLICHES TAGEBUCH</Text>
+        <Text style={styles.title}>HistaTrack</Text>
+        <Text style={styles.subtitle}>Ernährung, Histamin und dein Befinden gemeinsam verstehen.</Text>
 
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Heute</Text>
-          <Text style={styles.calories}>0 / 2.000 kcal</Text>
-          <View style={styles.row}>
-            <Text style={styles.metric}>Protein 0 / 140 g</Text>
-            <Text style={styles.metric}>Stimmung —</Text>
+          <Text style={styles.cardTitle}>Heute</Text>
+          <Text style={styles.calories}>{Math.round(summary.calories)} kcal</Text>
+          <View style={styles.metricsRow}>
+            <Metric label="Protein" value={`${Math.round(summary.protein)} g`} />
+            <Metric label="Kohlenhydrate" value={`${Math.round(summary.carbohydrates)} g`} />
+            <Metric label="Fett" value={`${Math.round(summary.fat)} g`} />
+          </View>
+          <View style={styles.statusRow}>
+            <Text style={styles.status}>Stimmung: {mood}</Text>
+            <Text style={styles.status}>Symptome: {summary.symptomCount}</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Was möchtest du tun?</Text>
-
-        {cards.map((card) => (
-          <Pressable key={card.title} style={styles.actionCard}>
-            <View style={styles.iconBox}><Text style={styles.icon}>{card.icon}</Text></View>
-            <View style={styles.actionText}>
-              <Text style={styles.actionTitle}>{card.title}</Text>
-              <Text style={styles.actionSubtitle}>{card.subtitle}</Text>
-            </View>
-          </Pressable>
-        ))}
+        <Text style={styles.sectionTitle}>Schnell erfassen</Text>
+        <Action title="Mahlzeit" subtitle="Kalorien, Makros und DAO" icon="🍽️" onPress={() => router.push('/meal')} />
+        <Action title="Check-in" subtitle="Stimmung, Energie, Stress" icon="🙂" onPress={() => router.push('/checkin')} />
+        <Action title="Symptome" subtitle="Art und Stärke dokumentieren" icon="🫀" onPress={() => router.push('/symptoms')} />
 
         <View style={styles.notice}>
-          <Text style={styles.noticeTitle}>Hinweis</Text>
-          <Text style={styles.noticeText}>HistaTrack unterstützt dich beim Dokumentieren und Erkennen zeitlicher Zusammenhänge. Die App ersetzt keine medizinische Diagnose.</Text>
+          <Text style={styles.noticeTitle}>Wichtiger Hinweis</Text>
+          <Text style={styles.noticeText}>HistaTrack erkennt zeitliche Muster, ersetzt aber keine medizinische Diagnose oder Behandlung.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+function Metric({ label, value }: { label: string; value: string }) {
+  return <View style={styles.metric}><Text style={styles.metricValue}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></View>;
+}
+
+function Action({ title, subtitle, icon, onPress }: { title: string; subtitle: string; icon: string; onPress: () => void }) {
+  return <Pressable style={styles.action} onPress={onPress}><Text style={styles.actionIcon}>{icon}</Text><View style={styles.actionText}><Text style={styles.actionTitle}>{title}</Text><Text style={styles.actionSubtitle}>{subtitle}</Text></View><Text style={styles.chevron}>›</Text></Pressable>;
+}
+
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F6F7F3" },
+  safeArea: { flex: 1, backgroundColor: '#F5F3EC' },
   container: { padding: 22, paddingBottom: 48 },
-  brand: { marginTop: 14, fontSize: 34, fontWeight: "800", color: "#26352D" },
-  tagline: { marginTop: 5, fontSize: 16, color: "#68736C" },
-  summaryCard: { marginTop: 28, padding: 22, borderRadius: 22, backgroundColor: "#26352D" },
-  summaryTitle: { color: "#DCE4DD", fontSize: 15, fontWeight: "700" },
-  calories: { marginTop: 12, color: "#FFFFFF", fontSize: 27, fontWeight: "800" },
-  row: { marginTop: 18, flexDirection: "row", justifyContent: "space-between" },
-  metric: { color: "#E9EEEA", fontSize: 13 },
-  sectionTitle: { marginTop: 30, marginBottom: 12, fontSize: 18, fontWeight: "800", color: "#26352D" },
-  actionCard: { marginBottom: 12, padding: 16, borderRadius: 18, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center" },
-  iconBox: { width: 46, height: 46, borderRadius: 14, backgroundColor: "#E9EEE9", alignItems: "center", justifyContent: "center" },
-  icon: { color: "#26352D", fontSize: 23, fontWeight: "800" },
-  actionText: { flex: 1, marginLeft: 14 },
-  actionTitle: { fontSize: 16, fontWeight: "800", color: "#26352D" },
-  actionSubtitle: { marginTop: 4, fontSize: 13, lineHeight: 18, color: "#6E7872" },
-  notice: { marginTop: 18, padding: 17, borderRadius: 16, backgroundColor: "#EAEDE8" },
-  noticeTitle: { fontWeight: "800", color: "#3E4942" },
-  noticeText: { marginTop: 5, fontSize: 12, lineHeight: 18, color: "#68736C" }
+  eyebrow: { marginTop: 18, fontSize: 12, letterSpacing: 1.5, fontWeight: '700', color: '#738078' },
+  title: { fontSize: 42, fontWeight: '800', color: '#27352F', marginTop: 4 },
+  subtitle: { fontSize: 16, lineHeight: 23, color: '#657069', marginTop: 8, marginBottom: 24 },
+  summaryCard: { backgroundColor: '#27352F', borderRadius: 24, padding: 22 },
+  cardTitle: { color: '#DCE5DE', fontWeight: '700' },
+  calories: { color: '#FFFFFF', fontSize: 34, fontWeight: '800', marginTop: 8 },
+  metricsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
+  metric: { flex: 1 }, metricValue: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' }, metricLabel: { color: '#B9C5BD', fontSize: 11, marginTop: 3 },
+  statusRow: { borderTopWidth: 1, borderTopColor: '#526158', marginTop: 18, paddingTop: 14, flexDirection: 'row', justifyContent: 'space-between' },
+  status: { color: '#E8ECE9', fontWeight: '600' },
+  sectionTitle: { fontSize: 20, fontWeight: '800', color: '#27352F', marginTop: 28, marginBottom: 12 },
+  action: { minHeight: 76, backgroundColor: '#FFFFFF', borderRadius: 18, paddingHorizontal: 16, marginBottom: 11, flexDirection: 'row', alignItems: 'center' },
+  actionIcon: { fontSize: 27, width: 43 }, actionText: { flex: 1 }, actionTitle: { fontSize: 17, fontWeight: '800', color: '#27352F' }, actionSubtitle: { color: '#748078', marginTop: 3 }, chevron: { fontSize: 31, color: '#9BA49E' },
+  notice: { marginTop: 20, backgroundColor: '#E8E4D9', borderRadius: 17, padding: 17 }, noticeTitle: { fontWeight: '800', color: '#4C574F' }, noticeText: { color: '#657069', fontSize: 12, lineHeight: 18, marginTop: 5 },
 });
