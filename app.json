@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "HistaTrack",
+    "slug": "histatrack",
+    "scheme": "histatrack",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "HistaTrack benötigt die Kamera, um Produktbarcodes zu scannen."
+        }
+      ],
+      "expo-sqlite"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "at.histatrack.app"
+    },
+    "android": {
+      "package": "at.histatrack.app"
+    }
+  }
+}
